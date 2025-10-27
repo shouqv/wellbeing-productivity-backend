@@ -226,3 +226,43 @@ class EmotionIndex(APIView):
             return Response(
                 {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+            
+            
+
+class LinkTaskToGoal(APIView):
+    permission_classes = [AllowAny]
+    def patch(self, request, goal_id, task_id):
+        goal = get_object_or_404(Goal, id=goal_id)
+        task = get_object_or_404(Task, id=task_id)
+        goal.tasks.add(task)
+        
+        goals_belong_to_task = Goal.objects.filter(tasks = task_id)
+        goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id)
+        
+        return Response(
+            {
+                "message": f"You have linked the task {task_id} to the goal {goal_id}",
+                "goals_belong_to_task": GoalSerializer(goals_belong_to_task, many=True).data,
+                "goals_doesnot_belong_to_task": GoalSerializer(goals_doesnot_belong_to_task, many=True).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+class UnlinkTaskFromGoal(APIView):
+    permission_classes = [AllowAny]
+    def patch(self, request, goal_id, task_id):
+        goal = get_object_or_404(Goal, id=goal_id)
+        task = get_object_or_404(Task, id=task_id)
+        goal.tasks.remove(task)
+        
+        goals_belong_to_task = Goal.objects.filter(tasks = task_id)
+        goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id)
+        
+        return Response(
+            {
+                "message": f"You have unlinked the task {task_id} to the goal {goal_id}",
+                "goals_belong_to_task": GoalSerializer(goals_belong_to_task, many=True).data,
+                "goals_doesnot_belong_to_task": GoalSerializer(goals_doesnot_belong_to_task, many=True).data,
+            },
+            status=status.HTTP_200_OK,
+        )
