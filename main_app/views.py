@@ -91,12 +91,20 @@ class TasksIndex(APIView):
             queryset = Task.objects.all()
             # the below gets the query in http://127.0.0.1:8000/api/tasks?date=2025-10-25 for example
             date = request.query_params.get('date')
-
             if date:
                 queryset = queryset.filter(date=date)
+            
+            pending_tasks = queryset.filter(status='pending')
+            in_progress_tasks = queryset.filter(status='in_progress' )
+            completed_tasks = queryset.filter(status='completed' )
                 
             serializer = TaskSerializer(queryset, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response( {
+                "message": f"Tasks",
+                "pending_tasks": TaskSerializer(pending_tasks, many=True).data,
+                "in_progress_tasks": TaskSerializer(in_progress_tasks, many=True).data,
+                "completed_tasks": TaskSerializer(completed_tasks, many=True).data,
+            }, status=status.HTTP_200_OK)
 
         except Exception as error:
             return Response(
@@ -251,9 +259,14 @@ class LinkTaskToGoal(APIView):
 class UnlinkTaskFromGoal(APIView):
     permission_classes = [AllowAny]
     def patch(self, request, goal_id, task_id):
+        # i might dont need to reltae the user id as the goal id and task id is unique to the user
+        # user_id = request.data.get("user")
         goal = get_object_or_404(Goal, id=goal_id)
         task = get_object_or_404(Task, id=task_id)
         goal.tasks.remove(task)
+        
+        # goals_belong_to_task = Goal.objects.filter(tasks = task_id , user = user_id)
+        # goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id).filter(user = user_id)
         
         goals_belong_to_task = Goal.objects.filter(tasks = task_id)
         goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id)
