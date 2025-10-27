@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated ,IsAuthenticatedOrReadOnly
 from .serializers import GoalSerializer , TaskSerializer , EmotionSerializer
+import ollama
 
 from django.shortcuts import get_object_or_404
 from .models import Goal , Task , Emotion
@@ -151,6 +152,75 @@ class TaskDetail(APIView):
                 {"message": f"Task {task_id} has been deleted for user {user_id}"},
                 status=status.HTTP_204_NO_CONTENT,
             )
+
+        except Exception as error:
+            return Response(
+                {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+
+
+
+
+# crediting the local AI model from Ollama: https://ollama.com/ALIENTELLIGENCE/mentalwellness
+def gen_response(user_input):
+    response = ollama.chat(
+        model="ALIENTELLIGENCE/mentalwellness",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are Luna, a mental wellness assistant. Always respond with one short, kind, supportive message. Never ask questions or continue the conversation. If a user expresses distress or thoughts of self-harm, gently remind them they are important and suggest reaching out for help — do not ask anything in return."
+                )
+            },
+            {
+                "role": "user",
+                "content": user_input
+            }
+        ]
+    )
+
+    return response['message']["content"]
+
+
+# #    {
+#         "id": 1,
+#         "emoji": "😄",
+#         "feeling_text": "im feeling great",
+#         "ai_response": "wow good for you(that was from me dw its not AI response yet 😆)",
+#         "date": "2025-10-27",
+#         "user": 1
+#     }
+class EmotionIndex(APIView):
+    # TODO - for now the permission is allow any to streamline testing apis
+    permission_classes = [AllowAny]
+    def get(self , request):
+        try:
+            # TODO - dont forget to uncomment the below once auth is done
+            # TODO - decide whether the returned data is only 7 days, a week 
+            # queryset = Emotion.objects.filter(user = request.user)
+            queryset = Emotion.objects.all()
+            serializer = EmotionSerializer(queryset , many = True)
+            return Response(serializer.data, status = status.HTTP_200_OK)
+        except Exception as error:
+            return Response({'error': str(error)} , status = status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    # TODO - update the entry later on with personlized previous data, so that 
+    # the ai becomes smarter and understand the user state
+    def post(self, request):
+        try:
+            data=request.data
+            data['ai_response'] = gen_response(
+            f"Today the user indicated their mood with emoji {data.get('emoji')} "
+            f"and wrote this about their feelings: '{data.get('feeling_text')}'. "
+            "Respond with a short, kind, supportive message."
+            )
+            serializer = EmotionSerializer(data = data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as error:
             return Response(
