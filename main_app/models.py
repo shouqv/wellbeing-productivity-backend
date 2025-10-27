@@ -6,9 +6,9 @@ User = get_user_model()
 
 class Task(models.Model):
     PRIORITY_CHOICES = (
-        ('L', 'Low'),
-        ('M', 'Medium'),
-        ('H', 'High'),
+        (1, 'Low'),
+        (2, 'Medium'),
+        (3, 'High'),
     )
 
     STATUS_CHOICES = [
@@ -20,11 +20,13 @@ class Task(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
     content = models.TextField(max_length=100)
     date = models.DateField()
-    priority = models.CharField(max_length=1, choices=PRIORITY_CHOICES, default='M')
+    priority = models.PositiveSmallIntegerField(max_length=1, choices=PRIORITY_CHOICES, default=2)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
 
     def __str__(self):
         return self.content
+    class Meta:
+        ordering = ['-priority']
     
 class Goal(models.Model):
     STATUS_CHOICES = (
