@@ -66,7 +66,6 @@ class GoalDetail(APIView):
     def delete(self, request, goal_id):
         try:
             queryset = get_object_or_404(Goal, id=goal_id)
-            queryset = get_object_or_404(Goal, id=goal_id)
             user_id = queryset.user.id
             queryset.delete()
             return Response(
@@ -119,6 +118,39 @@ class TasksIndex(APIView):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as error:
+            return Response(
+                {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class TaskDetail(APIView):
+    # TODO - for now the permission is allow any to streamline testing apis
+    permission_classes = [AllowAny]
+    def put(self, request, task_id):
+        try:
+            queryset = get_object_or_404(Task, id=task_id)
+            serializer = TaskSerializer(queryset, data=request.data)
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as error:
+            return Response(
+                {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) 
+    
+    def delete(self, request, task_id):
+        try:
+            queryset = get_object_or_404(Task, id=task_id)
+            user_id = queryset.user.id
+            queryset.delete()
+            return Response(
+                {"message": f"Task {task_id} has been deleted for user {user_id}"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
 
         except Exception as error:
             return Response(
