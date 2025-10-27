@@ -23,7 +23,6 @@ class Task(models.Model):
     priority = models.CharField(max_length=1, choices=PRIORITY_CHOICES, default='M')
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
 
-
     def __str__(self):
         return self.content
     
@@ -40,6 +39,7 @@ class Goal(models.Model):
 
     def __str__(self):
         return self.content
+
 
 class Emotion(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='emotions')
