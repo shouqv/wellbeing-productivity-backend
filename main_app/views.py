@@ -78,3 +78,27 @@ class GoalDetail(APIView):
             return Response(
                 {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+            
+            
+            
+class TasksIndex(APIView):
+    # TODO - for now the permission is allow any to streamline testing apis
+    permission_classes = [AllowAny]
+    def get(self, request):
+        try:
+            # TODO - uncomment the bellow once auth is done
+            # queryset = Task.objects.filter(user = request.user)
+            queryset = Task.objects.all()
+            # the below gets the query in http://127.0.0.1:8000/api/tasks?date=2025-10-25 for example
+            date = request.query_params.get('date')
+
+            if date:
+                queryset = queryset.filter(date=date)
+                
+            serializer = TaskSerializer(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as error:
+            return Response(
+                {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
