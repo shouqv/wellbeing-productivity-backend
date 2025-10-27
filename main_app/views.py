@@ -102,3 +102,25 @@ class TasksIndex(APIView):
             return Response(
                 {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+        #  {
+        #         "id": 1,
+        #         "content": "do front end",
+        #         "date": "2025-10-27",
+        #         "priority": 1,
+        #         "status": "pending",
+        #         "user": 1
+        #     }
+
+    def post(self, request):
+        try:
+            serializer = TaskSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as error:
+            return Response(
+                {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
