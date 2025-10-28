@@ -20,7 +20,7 @@ class Task(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
     content = models.TextField(max_length=100)
     date = models.DateField()
-    priority = models.PositiveSmallIntegerField(max_length=1, choices=PRIORITY_CHOICES, default=2)
+    priority = models.PositiveSmallIntegerField( choices=PRIORITY_CHOICES, default=2)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
 
     def __str__(self):
