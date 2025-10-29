@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated ,IsAuthenticatedOrReadOnly
 from .serializers import GoalSerializer , TaskSerializer , EmotionSerializer
 import ollama
+from datetime import date
 
 from django.shortcuts import get_object_or_404
 from .models import Goal , Task , Emotion
@@ -299,3 +300,18 @@ class UnlinkTaskFromGoal(APIView):
             },
             status=status.HTTP_200_OK,
         )
+        
+        
+class CheckTodayEmotionSubmission(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        # has_entry = Emotion.objects.filter(user=request.user, date=date.today()).exists()
+        has_entry = Emotion.objects.filter( date=date.today()).exists()
+        if has_entry:
+            emotion = Emotion.objects.filter(date=date.today()).last()
+            serialized = EmotionSerializer(emotion).data
+            return Response({
+                "already_submitted": True,
+                **serialized  
+            })
+        return Response({"already_submitted": has_entry})
