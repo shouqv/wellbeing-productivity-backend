@@ -151,7 +151,16 @@ class TaskDetail(APIView):
         try:
             queryset = get_object_or_404(Task, id=task_id)
             serializer = TaskSerializer(queryset)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            
+            goals_belong_to_task = Goal.objects.filter(task=task_id)
+            goals_doesnot_belong_to_task = Goal.objects.exclude(id__in=queryset.goals.all().values_list("id"))
+            
+            data = serializer.data
+            data["goals_belong_to_task"] = GoalSerializer(goals_belong_to_task, many=True).data
+            data["goals_doesnot_belong_to_task"] = GoalSerializer(goals_doesnot_belong_to_task, many=True).data
+            
+            return Response(data, status=status.HTTP_200_OK)
         except Exception as error:
             return Response(
                 {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -258,16 +267,62 @@ class EmotionIndex(APIView):
             
             
 
-class LinkTaskToGoal(APIView):
+# class LinkTaskToGoal(APIView):
+#     permission_classes = [AllowAny]
+#     def patch(self, request, goal_id, task_id):
+#         goal = get_object_or_404(Goal, id=goal_id)
+#         task = get_object_or_404(Task, id=task_id)
+#         goal.tasks.add(task)
+        
+#         goals_belong_to_task = Goal.objects.filter(tasks = task_id)
+#         goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id)
+        
+#         return Response(
+#             {
+#                 "message": f"You have linked the task {task_id} to the goal {goal_id}",
+#                 "goals_belong_to_task": GoalSerializer(goals_belong_to_task, many=True).data,
+#                 "goals_doesnot_belong_to_task": GoalSerializer(goals_doesnot_belong_to_task, many=True).data,
+#             },
+#             status=status.HTTP_200_OK,
+#         )
+
+# class UnlinkTaskFromGoal(APIView):
+#     permission_classes = [AllowAny]
+#     def patch(self, request, goal_id, task_id):
+#         # i might dont need to reltae the user id as the goal id and task id is unique to the user
+#         # user_id = request.data.get("user")
+#         goal = get_object_or_404(Goal, id=goal_id)
+#         task = get_object_or_404(Task, id=task_id)
+#         goal.tasks.remove(task)
+        
+#         # goals_belong_to_task = Goal.objects.filter(tasks = task_id , user = user_id)
+#         # goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id).filter(user = user_id)
+        
+#         goals_belong_to_task = Goal.objects.filter(tasks = task_id)
+#         goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id)
+        
+#         return Response(
+#             {
+#                 "message": f"You have unlinked the task {task_id} to the goal {goal_id}",
+#                 "goals_belong_to_task": GoalSerializer(goals_belong_to_task, many=True).data,
+#                 "goals_doesnot_belong_to_task": GoalSerializer(goals_doesnot_belong_to_task, many=True).data,
+#             },
+#             status=status.HTTP_200_OK,
+#         )
+        
+
+class LinkGoalToTask(APIView):
     permission_classes = [AllowAny]
     def patch(self, request, goal_id, task_id):
         goal = get_object_or_404(Goal, id=goal_id)
         task = get_object_or_404(Task, id=task_id)
-        goal.tasks.add(task)
+        task.goals.add(goal)
         
-        goals_belong_to_task = Goal.objects.filter(tasks = task_id)
-        goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id)
-        
+        goals_belong_to_task = Goal.objects.filter(task=task_id)
+        goals_doesnot_belong_to_task = Goal.objects.exclude(
+            id__in=task.goals.all().values_list("id")
+        )
+
         return Response(
             {
                 "message": f"You have linked the task {task_id} to the goal {goal_id}",
@@ -276,31 +331,29 @@ class LinkTaskToGoal(APIView):
             },
             status=status.HTTP_200_OK,
         )
-        
-class UnlinkTaskFromGoal(APIView):
+
+class UnLinkGoalToTask(APIView):
     permission_classes = [AllowAny]
     def patch(self, request, goal_id, task_id):
-        # i might dont need to reltae the user id as the goal id and task id is unique to the user
-        # user_id = request.data.get("user")
         goal = get_object_or_404(Goal, id=goal_id)
         task = get_object_or_404(Task, id=task_id)
-        goal.tasks.remove(task)
+        task.goals.remove(goal)
         
-        # goals_belong_to_task = Goal.objects.filter(tasks = task_id , user = user_id)
-        # goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id).filter(user = user_id)
-        
-        goals_belong_to_task = Goal.objects.filter(tasks = task_id)
-        goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id)
-        
+        goals_belong_to_task = Goal.objects.filter(task=task_id)
+        goals_doesnot_belong_to_task = Goal.objects.exclude(
+            id__in=task.goals.all().values_list("id")
+        )
+
         return Response(
             {
-                "message": f"You have unlinked the task {task_id} to the goal {goal_id}",
+                "message": f"You have linked the task {task_id} to the goal {goal_id}",
                 "goals_belong_to_task": GoalSerializer(goals_belong_to_task, many=True).data,
                 "goals_doesnot_belong_to_task": GoalSerializer(goals_doesnot_belong_to_task, many=True).data,
             },
             status=status.HTTP_200_OK,
         )
-        
+
+
         
 class CheckTodayEmotionSubmission(APIView):
     permission_classes = [AllowAny]
@@ -315,3 +368,7 @@ class CheckTodayEmotionSubmission(APIView):
                 **serialized  
             })
         return Response({"already_submitted": has_entry})
+    
+    
+# TODO 
+# in the dashboard retrun the number of tasks per each goal

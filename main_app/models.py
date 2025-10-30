@@ -4,6 +4,22 @@ User = get_user_model()
 # Create your models here.
 
 
+
+    
+class Goal(models.Model):
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('achieved', 'Achieved'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='goals')
+    content = models.TextField(max_length=150)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    year = models.PositiveIntegerField()
+
+    def __str__(self):
+        return self.content
+    
+    
 class Task(models.Model):
     PRIORITY_CHOICES = (
         (1, 'Low'),
@@ -16,7 +32,7 @@ class Task(models.Model):
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
     ]
-
+    goals = models.ManyToManyField(Goal)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
     content = models.TextField(max_length=100)
     date = models.DateField()
@@ -27,21 +43,6 @@ class Task(models.Model):
         return self.content
     class Meta:
         ordering = ['-priority']
-    
-class Goal(models.Model):
-    STATUS_CHOICES = (
-        ('active', 'Active'),
-        ('achieved', 'Achieved'),
-    )
-    tasks = models.ManyToManyField(Task)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='goals')
-    content = models.TextField(max_length=150)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    year = models.PositiveIntegerField()
-
-    def __str__(self):
-        return self.content
-
 
 class Emotion(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='emotions')

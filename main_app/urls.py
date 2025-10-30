@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import GoalsIndex , GoalDetail , TasksIndex ,TaskDetail , EmotionIndex , LinkTaskToGoal , UnlinkTaskFromGoal, CheckTodayEmotionSubmission
+from .views import GoalsIndex , GoalDetail , TasksIndex ,TaskDetail , EmotionIndex , LinkGoalToTask , UnLinkGoalToTask, CheckTodayEmotionSubmission
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
@@ -9,6 +9,7 @@ path('tasks/', TasksIndex.as_view(), name='task_index'),
 path('tasks/<int:task_id>/', TaskDetail.as_view(), name='task_detail'),
 path('emotions/', EmotionIndex.as_view(), name='emotion_detail'),
 path('emotions/check/', CheckTodayEmotionSubmission.as_view(), name='check_emotion_submission'),
-path('goals/<int:goal_id>/link-task/<int:task_id>/', LinkTaskToGoal.as_view(), name='link_task_to_goal'),
-path('goals/<int:goal_id>/unlink-task/<int:task_id>/', UnlinkTaskFromGoal.as_view(), name='unlink_task_from_goal'),
+path('tasks/<int:task_id>/link-goal/<int:goal_id>/', LinkGoalToTask.as_view(), name='link_goal_to_task'),
+path('tasks/<int:task_id>/unlink-goal/<int:goal_id>/', UnLinkGoalToTask.as_view(), name='link_goal_to_task'),
+
 ]
