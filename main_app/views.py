@@ -1,24 +1,32 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated ,IsAuthenticatedOrReadOnly
-from .serializers import GoalSerializer , TaskSerializer , EmotionSerializer
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
+import re
+from .serializers import GoalSerializer , TaskSerializer , EmotionSerializer , VisionBoardSerializer
 import ollama
 from datetime import date
 
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
 from django.shortcuts import get_object_or_404
-from .models import Goal , Task , Emotion
+from .models import Goal , Task , Emotion , VisionBoard
 # Create your views here.
 
 class GoalsIndex(APIView):
     # TODO - for now the permission is allow any to streamline testing apis
     # TODO - maybe provide the goals for a specific year only
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self , request):
         try:
             # TODO - dont forget to uncomment the below once auth is done
-            # queryset = Goal.objects.filter(user = request.user)
-            queryset = Goal.objects.all()
+            queryset = Goal.objects.filter(user = request.user)
+            # queryset = Goal.objects.all()
             serializer = GoalSerializer(queryset , many = True)
             return Response(serializer.data, status = status.HTTP_200_OK)
         except Exception as error:
@@ -38,7 +46,8 @@ class GoalsIndex(APIView):
             serializer = GoalSerializer(data=request.data)
             # TODO - check if the user id is automatically checked if it exist from the is_valid
             if serializer.is_valid():
-                serializer.save()
+                # serializer.save()
+                serializer.save(user=request.user)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -50,10 +59,10 @@ class GoalsIndex(APIView):
             
 class GoalDetail(APIView):
     # TODO - for now the permission is allow any to streamline testing apis
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated] 
     def get(self , request, goal_id):
         try:
-            queryset = get_object_or_404(Goal, id=goal_id)
+            queryset = get_object_or_404(Goal, id=goal_id, user=request.user)
             serializer = GoalSerializer(queryset)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as error:
@@ -62,7 +71,7 @@ class GoalDetail(APIView):
             )
     def put(self, request, goal_id):
         try:
-            queryset = get_object_or_404(Goal, id=goal_id)
+            queryset = get_object_or_404(Goal, id=goal_id, user=request.user)
             serializer = GoalSerializer(queryset, data=request.data)
             
             if serializer.is_valid():
@@ -77,7 +86,7 @@ class GoalDetail(APIView):
             
     def delete(self, request, goal_id):
         try:
-            queryset = get_object_or_404(Goal, id=goal_id)
+            queryset = get_object_or_404(Goal, id=goal_id, user=request.user)
             user_id = queryset.user.id
             queryset.delete()
             return Response(
@@ -94,12 +103,12 @@ class GoalDetail(APIView):
             
 class TasksIndex(APIView):
     # TODO - for now the permission is allow any to streamline testing apis
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
-            # TODO - uncomment the bellow once auth is done
-            # queryset = Task.objects.filter(user = request.user)
-            queryset = Task.objects.all()
+            
+            queryset = Task.objects.filter(user = request.user)
+            # queryset = Task.objects.all()
             # the below gets the query in http://127.0.0.1:8000/api/tasks?date=2025-10-25 for example
             date = request.query_params.get('date')
             if date:
@@ -135,7 +144,8 @@ class TasksIndex(APIView):
         try:
             serializer = TaskSerializer(data=request.data)
             if serializer.is_valid():
-                serializer.save()
+                # serializer.save()
+                serializer.save(user=request.user)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -146,10 +156,10 @@ class TasksIndex(APIView):
 
 class TaskDetail(APIView):
     # TODO - for now the permission is allow any to streamline testing apis
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated] 
     def get(self , request, task_id):
         try:
-            queryset = get_object_or_404(Task, id=task_id)
+            queryset = get_object_or_404(Task, id=task_id, user=request.user)
             serializer = TaskSerializer(queryset)
             
             
@@ -168,7 +178,7 @@ class TaskDetail(APIView):
             
     def put(self, request, task_id):
         try:
-            queryset = get_object_or_404(Task, id=task_id)
+            queryset = get_object_or_404(Task, id=task_id, user=request.user)
             serializer = TaskSerializer(queryset, data=request.data)
             
             if serializer.is_valid():
@@ -183,7 +193,7 @@ class TaskDetail(APIView):
     
     def delete(self, request, task_id):
         try:
-            queryset = get_object_or_404(Task, id=task_id)
+            queryset = get_object_or_404(Task, id=task_id, user=request.user)
             user_id = queryset.user.id
             queryset.delete()
             return Response(
@@ -232,13 +242,13 @@ def gen_response(user_input):
 #     }
 class EmotionIndex(APIView):
     # TODO - for now the permission is allow any to streamline testing apis
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self , request):
         try:
-            # TODO - dont forget to uncomment the below once auth is done
+            
             # TODO - decide whether the returned data is only 7 days, a week 
-            # queryset = Emotion.objects.filter(user = request.user)
-            queryset = Emotion.objects.all()
+            queryset = Emotion.objects.filter(user = request.user)
+            # queryset = Emotion.objects.all()
             serializer = EmotionSerializer(queryset , many = True)
             return Response(serializer.data, status = status.HTTP_200_OK)
         except Exception as error:
@@ -256,7 +266,8 @@ class EmotionIndex(APIView):
             )
             serializer = EmotionSerializer(data = data)
             if serializer.is_valid():
-                serializer.save()
+                # serializer.save()
+                serializer.save(user=request.user)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -312,10 +323,10 @@ class EmotionIndex(APIView):
         
 
 class LinkGoalToTask(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated] 
     def patch(self, request, goal_id, task_id):
-        goal = get_object_or_404(Goal, id=goal_id)
-        task = get_object_or_404(Task, id=task_id)
+        goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+        task = get_object_or_404(Task, id=task_id, user=request.user)
         task.goals.add(goal)
         
         goals_belong_to_task = Goal.objects.filter(task=task_id)
@@ -333,10 +344,10 @@ class LinkGoalToTask(APIView):
         )
 
 class UnLinkGoalToTask(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated] 
     def patch(self, request, goal_id, task_id):
-        goal = get_object_or_404(Goal, id=goal_id)
-        task = get_object_or_404(Task, id=task_id)
+        goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+        task = get_object_or_404(Task, id=task_id, user=request.user)
         task.goals.remove(goal)
         
         goals_belong_to_task = Goal.objects.filter(task=task_id)
@@ -346,7 +357,7 @@ class UnLinkGoalToTask(APIView):
 
         return Response(
             {
-                "message": f"You have linked the task {task_id} to the goal {goal_id}",
+                "message": f"You have unlinked the task {task_id} to the goal {goal_id}",
                 "goals_belong_to_task": GoalSerializer(goals_belong_to_task, many=True).data,
                 "goals_doesnot_belong_to_task": GoalSerializer(goals_doesnot_belong_to_task, many=True).data,
             },
@@ -356,12 +367,13 @@ class UnLinkGoalToTask(APIView):
 
         
 class CheckTodayEmotionSubmission(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     def get(self, request):
-        # has_entry = Emotion.objects.filter(user=request.user, date=date.today()).exists()
-        has_entry = Emotion.objects.filter( date=date.today()).exists()
+        has_entry = Emotion.objects.filter(user=request.user, date=date.today()).exists()
+        # has_entry = Emotion.objects.filter( date=date.today()).exists()
         if has_entry:
-            emotion = Emotion.objects.filter(date=date.today()).last()
+            # might need to delte last, cus either way they only will have one entry per day
+            emotion = Emotion.objects.filter(user=request.user, date=date.today()).last()
             serialized = EmotionSerializer(emotion).data
             return Response({
                 "already_submitted": True,
@@ -372,3 +384,80 @@ class CheckTodayEmotionSubmission(APIView):
     
 # TODO 
 # in the dashboard retrun the number of tasks per each goal
+
+
+class VisionBoard(APIView):
+    permission_classes = [IsAuthenticated] 
+
+    def get(self, request):
+        try:
+            board = VisionBoard.objects.get(user=request.user)
+            serializer = VisionBoardSerializer(board)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except VisionBoard.DoesNotExist:
+            return Response({'tldraw_data': {}}, status=status.HTTP_200_OK)
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def post(self, request):
+        try:
+            serializer = VisionBoardSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(user=request.user)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def put(self, request):
+        try:
+            board, created = VisionBoard.objects.get_or_create(user=request.user)
+            board.tldraw_data = request.data.get('tldraw_data', {})
+            board.save()
+            return Response({'message': 'Vision board updated successfully.'}, status=status.HTTP_200_OK)
+        except Exception as error:
+            return Response({'error': str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Crediting https://git.generalassemb.ly/SDA-SEB-02-V/DRF-example/blob/main/cat-collector-backend/main_app/views.py#L252-L279
+class SignupUserView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get("username")
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        if not username or not password or not email:
+            return Response(
+                {"error": "Please provide a username, password, and email"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if User.objects.filter(username=username).exists():
+            return Response(
+                {'error': "User Already Exisits"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+            
+        if len(password) < 8:
+            return Response({"error": "Password must be at least 8 characters long"}, status=status.HTTP_400_BAD_REQUEST)
+        if not re.search(r"[A-Z]", password):
+            return Response({"error": "Password must contain at least one uppercase letter"}, status=status.HTTP_400_BAD_REQUEST)
+        if not re.search(r"[a-z]", password):
+            return Response({"error": "Password must contain at least one lowercase letter"}, status=status.HTTP_400_BAD_REQUEST)
+        if not re.search(r"[0-9]", password):
+            return Response({"error": "Password must contain at least one number"}, status=status.HTTP_400_BAD_REQUEST)
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+            return Response({"error": "Password must contain at least one special character"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            
+
+        user = User.objects.create_user(
+            username=username, email=email, password=password
+        )
+        
+        return Response(
+            {"id": user.id, "username": user.username, "email": user.email},
+            status=status.HTTP_201_CREATED,
+        )

@@ -58,3 +58,11 @@ class Emotion(models.Model):
 # class VisionBoard(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='vision_board')
 #     excalidraw_data = 
+
+
+class VisionBoard(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='vision_board')
+    tldraw_data = models.JSONField(default=dict, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Vision Board"
