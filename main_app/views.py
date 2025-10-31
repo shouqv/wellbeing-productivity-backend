@@ -163,8 +163,9 @@ class TaskDetail(APIView):
             serializer = TaskSerializer(queryset)
             
             
-            goals_belong_to_task = Goal.objects.filter(task=task_id)
-            goals_doesnot_belong_to_task = Goal.objects.exclude(id__in=queryset.goals.all().values_list("id"))
+            # goals_belong_to_task = Goal.objects.filter(task=task_id , user=request.user)
+            goals_belong_to_task = queryset.goals.all()
+            goals_doesnot_belong_to_task = Goal.objects.filter(user=request.user).exclude(id__in=queryset.goals.all().values_list("id"))
             
             data = serializer.data
             data["goals_belong_to_task"] = GoalSerializer(goals_belong_to_task, many=True).data
@@ -329,10 +330,13 @@ class LinkGoalToTask(APIView):
         task = get_object_or_404(Task, id=task_id, user=request.user)
         task.goals.add(goal)
         
-        goals_belong_to_task = Goal.objects.filter(task=task_id)
-        goals_doesnot_belong_to_task = Goal.objects.exclude(
-            id__in=task.goals.all().values_list("id")
-        )
+        # goals_belong_to_task = Goal.objects.filter(task=task_id)
+        # goals_doesnot_belong_to_task = Goal.objects.exclude(
+        #     id__in=task.goals.all().values_list("id")
+        # )
+        
+        goals_belong_to_task = task.goals.all()
+        goals_doesnot_belong_to_task = Goal.objects.filter(user=request.user).exclude(id__in=task.goals.all().values_list("id"))
 
         return Response(
             {
@@ -350,10 +354,13 @@ class UnLinkGoalToTask(APIView):
         task = get_object_or_404(Task, id=task_id, user=request.user)
         task.goals.remove(goal)
         
-        goals_belong_to_task = Goal.objects.filter(task=task_id)
-        goals_doesnot_belong_to_task = Goal.objects.exclude(
-            id__in=task.goals.all().values_list("id")
-        )
+        # goals_belong_to_task = Goal.objects.filter(task=task_id)
+        # goals_doesnot_belong_to_task = Goal.objects.exclude(
+        #     id__in=task.goals.all().values_list("id")
+        # )
+        
+        goals_belong_to_task = task.goals.all()
+        goals_doesnot_belong_to_task = Goal.objects.filter(user=request.user).exclude(id__in=task.goals.all().values_list("id"))
 
         return Response(
             {
