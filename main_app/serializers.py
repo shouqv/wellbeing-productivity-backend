@@ -30,4 +30,4 @@ class VisionBoardSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = VisionBoard
-        fields = ["tldraw_data"]
+        fields = "__all__"
