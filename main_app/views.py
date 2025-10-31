@@ -457,3 +457,65 @@ class SignupUserView(APIView):
             {"id": user.id, "username": user.username, "email": user.email},
             status=status.HTTP_201_CREATED,
         )
+        
+class DashBoardInfo(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            user = request.user
+
+            # get coompleted tasks out of all tasks
+            all_tasks = Task.objects.filter(user=user)
+            total_tasks = all_tasks.count()
+            completed_tasks_count = all_tasks.filter(status='completed').count()
+
+            # emojis for this month
+            today = date.today()
+            start_of_month = today.replace(day=1)
+            monthly_emotions = Emotion.objects.filter(
+                user=user,
+                date__gte=start_of_month,
+                date__lte=today
+            )
+
+            emojis_this_month = monthly_emotions.values_list('emoji', flat=True)
+
+
+            # for each goal number of linked tasks and completed tasks
+            goals = Goal.objects.filter(user=user)
+            goal_info = []
+            for goal in goals:
+                linked_tasks = Task.objects.filter(user=user, goals = goal.id)
+                completed_linked_tasks = linked_tasks.filter(status='completed')
+                goal_info.append({
+                    "goal_id": goal.id,
+                    "goal_content": goal.content,
+                    "linked_tasks_count": linked_tasks.count(),
+                    "completed_linked_tasks_count": completed_linked_tasks.count(),
+                    "status": goal.status
+                })
+
+            # high priority tasks
+            high_priority_tasks = all_tasks.filter(priority=3)
+            high_priority_tasks_data = TaskSerializer(high_priority_tasks, many=True).data
+
+            # any achieved goal 
+            achieved_goals = goals.filter(status='achieved')
+
+            # each emoji and number of occurance in this month 
+            emoji_counts = {}
+            for emoji in emojis_this_month:
+                emoji_counts[emoji] = emoji_counts.get(emoji, 0) + 1
+            response_data = {
+                "total_tasks": total_tasks,
+                "completed_tasks": completed_tasks_count,
+                "emojis_this_month": list(emojis_this_month),
+                "emoji_counts": emoji_counts,
+                "goals_info": goal_info,
+                "high_priority_tasks": high_priority_tasks_data,
+                "achieved_goals":  GoalSerializer(achieved_goals, many=True).data
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as error:
+            return Response({"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
