@@ -467,10 +467,7 @@ def gen_dashboard_summary(user_data):
     
     emotions_by_date = {e['date']: e for e in weekly_emotions_data}
 
-    print("innn genn")
-    print(weekly_tasks_data)
-    print(weekly_emotions_data)
-    print(emotions_by_date)
+    print("innn genn---------------------------------------------------------------------------------------------------------")
     tasks_by_date= {}
     for task in weekly_tasks_data:
         task_date = task['date']
@@ -478,18 +475,37 @@ def gen_dashboard_summary(user_data):
             tasks_by_date[task_date] = []
         tasks_by_date[task_date].append(task)
 
-    print(tasks_by_date)
     
-    summary_text = "Here is the user's data for the past period:\n"
-    for dayDate in sorted(tasks_by_date.keys()):
-        emotion_entry = emotions_by_date.get(dayDate, {})
-        emoji = emotion_entry.get('emoji', 'None')
-        feeling_text = emotion_entry.get('feeling_text', '')
+    
+    # summary_text = "Here is the user's data for the past period:\n"
+    # for dayDate in sorted(tasks_by_date.keys()):
+    #     emotion_entry = emotions_by_date.get(dayDate, {})
+    #     emoji = emotion_entry.get('emoji', 'None')
+    #     feeling_text = emotion_entry.get('feeling_text', '')
 
-        summary_text += f"{dayDate} (Mood: {emoji}, Notes: {feeling_text}):\n"
-        for t in tasks_by_date[dayDate]:
-            summary_text += f"  - Task '{t['content']}' is {t['status']}\n"
-    
+    #     summary_text += f"{dayDate} (Mood: {emoji}, Notes: {feeling_text}):\n"
+    #     for t in tasks_by_date[dayDate]:
+    #         summary_text += f"  - Task '{t['content']}' is {t['status']}\n"
+        # Combine both — prioritize emotion dates so no day is skipped
+    all_dates = sorted(set(emotions_by_date.keys()) | set(tasks_by_date.keys()))
+
+    summary_text = "Here is the user's mood data (do not infer missing days):\n"
+
+    for day_date in all_dates:
+        emotion_entry = emotions_by_date.get(day_date, {})
+        emoji = emotion_entry.get("emoji", "None")
+        feeling_text = emotion_entry.get("feeling_text", "")
+
+        summary_text += f"\n{day_date} (Mood: {emoji}, Journal: {feeling_text}):\n"
+
+        # Add tasks if available
+        day_tasks = tasks_by_date.get(day_date, [])
+        if day_tasks:
+            for t in day_tasks:
+                summary_text += f"  - Task '{t['content']}' is {t['status']}\n"
+        else:
+            summary_text += "  - No tasks for this day.\n"
+    print(summary_text)
 
     system_prompt = (
     "You are Luna, a mental wellness assistant. "
@@ -530,10 +546,7 @@ class DashBoardInfo(APIView):
             # crediting https://www.dataquest.io/blog/python-datetime/
             # the below retrieves the date of the sunday of the current week
             start_of_week = today - timedelta(days=days_since_sunday)
-            print(start_of_week)
-
-
-            week_dates = [start_of_week + timedelta(days=i) for i in range((today - start_of_week).days + 1)]
+            
 
             weekly_tasks = Task.objects.filter(user=user, date__gte=start_of_week, date__lte=today)
             weekly_tasks_data = TaskSerializer(weekly_tasks, many=True).data
@@ -555,7 +568,7 @@ class DashBoardInfo(APIView):
 }
 
             ai_analytics = gen_dashboard_summary(user_data_for_ai)
-            print(user_data_for_ai)
+            
 
             # emojis for this month
             start_of_month = today.replace(day=1)
