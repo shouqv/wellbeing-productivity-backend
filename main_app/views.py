@@ -495,7 +495,7 @@ class DashBoardInfo(APIView):
                 })
 
             # high priority tasks
-            high_priority_tasks = all_tasks.filter(priority=3)
+            high_priority_tasks = all_tasks.filter(priority=3).order_by('-status')
             high_priority_tasks_data = TaskSerializer(high_priority_tasks, many=True).data
 
             # any achieved goal 
