@@ -463,21 +463,20 @@ class DashBoardInfo(APIView):
     def get(self, request):
         try:
             user = request.user
-
+            today = date.today()
             # get coompleted tasks out of all tasks
-            all_tasks = Task.objects.filter(user=user)
+            all_tasks = Task.objects.filter(user=user , date=today)
             total_tasks = all_tasks.count()
             completed_tasks_count = all_tasks.filter(status='completed').count()
 
             # emojis for this month
-            today = date.today()
             start_of_month = today.replace(day=1)
             monthly_emotions = Emotion.objects.filter(
                 user=user,
                 date__gte=start_of_month,
                 date__lte=today
             )
-
+            # monthly_emotions_data = EmotionSerializer(monthly_emotions , many=True).data
             emojis_this_month = monthly_emotions.values_list('emoji', flat=True)
 
 
@@ -506,6 +505,7 @@ class DashBoardInfo(APIView):
             emoji_counts = {}
             for emoji in emojis_this_month:
                 emoji_counts[emoji] = emoji_counts.get(emoji, 0) + 1
+                
             response_data = {
                 "total_tasks": total_tasks,
                 "completed_tasks": completed_tasks_count,
@@ -515,6 +515,7 @@ class DashBoardInfo(APIView):
                 "high_priority_tasks": high_priority_tasks_data,
                 "achieved_goals":  GoalSerializer(achieved_goals, many=True).data
             }
+
             return Response(response_data, status=status.HTTP_200_OK)
 
         except Exception as error:
