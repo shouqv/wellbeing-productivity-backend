@@ -9,7 +9,7 @@ from rest_framework.permissions import (
 import re
 from .serializers import GoalSerializer , TaskSerializer , EmotionSerializer , VisionBoardSerializer
 import ollama
-from datetime import date
+from datetime import date , timedelta
 
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -457,7 +457,60 @@ class SignupUserView(APIView):
             {"id": user.id, "username": user.username, "email": user.email},
             status=status.HTTP_201_CREATED,
         )
-        
+
+
+
+def gen_dashboard_summary(user_data):
+    weekly_tasks_data = user_data.get("tasks", [])
+    weekly_emotions_data = user_data.get("emotions", [])
+
+    
+    emotions_by_date = {e['date']: e for e in weekly_emotions_data}
+
+    print("innn genn")
+    print(weekly_tasks_data)
+    print(weekly_emotions_data)
+    print(emotions_by_date)
+    tasks_by_date= {}
+    for task in weekly_tasks_data:
+        task_date = task['date']
+        if task_date not in tasks_by_date:
+            tasks_by_date[task_date] = []
+        tasks_by_date[task_date].append(task)
+
+    print(tasks_by_date)
+    
+    summary_text = "Here is the user's data for the past period:\n"
+    for dayDate in sorted(tasks_by_date.keys()):
+        emotion_entry = emotions_by_date.get(dayDate, {})
+        emoji = emotion_entry.get('emoji', 'None')
+        feeling_text = emotion_entry.get('feeling_text', '')
+
+        summary_text += f"{dayDate} (Mood: {emoji}, Notes: {feeling_text}):\n"
+        for t in tasks_by_date[dayDate]:
+            summary_text += f"  - Task '{t['content']}' is {t['status']}\n"
+    
+
+    system_prompt = (
+    "You are Luna, a mental wellness assistant. "
+    "Analyze the following user data for trends over the week. "
+    "Output ONLY plain text, addressing the user directly (use 'you' instead of 'the user'). "
+    "Do NOT use markdown, bold, or headings. "
+    "Write a very short, concise report in two sentences: "
+    "first sentence for the main trend, second sentence for a coping mechanism or supportive tip. "
+    "Do not ask any questions or add extra commentary.")
+    
+    response = ollama.chat(
+        model="ALIENTELLIGENCE/mentalwellness",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": summary_text}
+        ]
+    )
+    
+    return response['message']["content"] if response['message'] else "No summary available."
+
+
 class DashBoardInfo(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
@@ -468,6 +521,41 @@ class DashBoardInfo(APIView):
             all_tasks = Task.objects.filter(user=user , date=today)
             total_tasks = all_tasks.count()
             completed_tasks_count = all_tasks.filter(status='completed').count()
+            
+            
+            # returning the week emotion + tasks info entry to go to the ai
+            # crediting https://stackoverflow.com/questions/17016051/need-sunday-as-the-first-day-of-the-week
+            days_since_sunday = (today.weekday() + 1) % 7
+            
+            # crediting https://www.dataquest.io/blog/python-datetime/
+            # the below retrieves the date of the sunday of the current week
+            start_of_week = today - timedelta(days=days_since_sunday)
+            print(start_of_week)
+
+
+            week_dates = [start_of_week + timedelta(days=i) for i in range((today - start_of_week).days + 1)]
+
+            weekly_tasks = Task.objects.filter(user=user, date__gte=start_of_week, date__lte=today)
+            weekly_tasks_data = TaskSerializer(weekly_tasks, many=True).data
+
+
+                        
+                
+            weekly_emotions = Emotion.objects.filter(
+                user=user,
+                date__gte=start_of_week,
+                date__lte=today
+            ).order_by('date')
+
+            weekly_emotions_data = EmotionSerializer(weekly_emotions, many=True).data
+            
+            user_data_for_ai = {
+            "tasks": weekly_tasks_data,       
+            "emotions": weekly_emotions_data  
+}
+
+            ai_analytics = gen_dashboard_summary(user_data_for_ai)
+            print(user_data_for_ai)
 
             # emojis for this month
             start_of_month = today.replace(day=1)
@@ -513,7 +601,9 @@ class DashBoardInfo(APIView):
                 "emoji_counts": emoji_counts,
                 "goals_info": goal_info,
                 "high_priority_tasks": high_priority_tasks_data,
-                "achieved_goals":  GoalSerializer(achieved_goals, many=True).data
+                "achieved_goals":  GoalSerializer(achieved_goals, many=True).data,
+                "weekly_emotions":weekly_emotions_data,
+                "ai_analytics":ai_analytics
             }
 
             return Response(response_data, status=status.HTTP_200_OK)
