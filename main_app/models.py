@@ -42,7 +42,7 @@ class Task(models.Model):
     def __str__(self):
         return self.content
     class Meta:
-        ordering = ['-priority']
+        ordering = ['-priority', '-status']
 
 class Emotion(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='emotions')
