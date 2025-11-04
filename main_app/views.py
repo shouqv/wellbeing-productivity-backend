@@ -4,49 +4,37 @@ from rest_framework import status
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
 )
 import re
-from .serializers import GoalSerializer , TaskSerializer , EmotionSerializer , VisionBoardSerializer
+from .serializers import GoalSerializer , TaskSerializer , EmotionSerializer , VisionBoardSerializer , AiAnalysisReportSerilaizer
 import ollama
 from datetime import date , timedelta
+
 
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
 from django.shortcuts import get_object_or_404
-from .models import Goal , Task , Emotion , VisionBoard
-# Create your views here.
+from .models import Goal , Task , Emotion , VisionBoard , AiAnalysisReport
+
 
 class GoalsIndex(APIView):
-    # TODO - for now the permission is allow any to streamline testing apis
-    # TODO - maybe provide the goals for a specific year only
     permission_classes = [IsAuthenticated]
     def get(self , request):
         try:
-            # TODO - dont forget to uncomment the below once auth is done
             queryset = Goal.objects.filter(user = request.user)
-            # queryset = Goal.objects.all()
             serializer = GoalSerializer(queryset , many = True)
             return Response(serializer.data, status = status.HTTP_200_OK)
         except Exception as error:
             return Response({'error': str(error)} , status = status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     
-    # REMEMBER: the below is the post req needed
-    # {
-    #     "content": "to let the test succedd",
-    #     "status": "active",
-    #     "year": 2025,
-    #     "user": 1
-    # }
 
     def post(self, request):
         try:
             serializer = GoalSerializer(data=request.data)
-            # TODO - check if the user id is automatically checked if it exist from the is_valid
             if serializer.is_valid():
-                # serializer.save()
+
                 serializer.save(user=request.user)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -58,7 +46,6 @@ class GoalsIndex(APIView):
             
             
 class GoalDetail(APIView):
-    # TODO - for now the permission is allow any to streamline testing apis
     permission_classes = [IsAuthenticated] 
     def get(self , request, goal_id):
         try:
@@ -102,13 +89,11 @@ class GoalDetail(APIView):
             
             
 class TasksIndex(APIView):
-    # TODO - for now the permission is allow any to streamline testing apis
     permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
             
             queryset = Task.objects.filter(user = request.user)
-            # queryset = Task.objects.all()
             # the below gets the query in http://127.0.0.1:8000/api/tasks?date=2025-10-25 for example
             date = request.query_params.get('date')
             if date:
@@ -131,20 +116,12 @@ class TasksIndex(APIView):
                 {"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
-        #  {
-        #         "id": 1,
-        #         "content": "do front end",
-        #         "date": "2025-10-27",
-        #         "priority": 1,
-        #         "status": "pending",
-        #         "user": 1
-        #     }
 
     def post(self, request):
         try:
             serializer = TaskSerializer(data=request.data)
             if serializer.is_valid():
-                # serializer.save()
+
                 serializer.save(user=request.user)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -155,7 +132,7 @@ class TasksIndex(APIView):
             )
 
 class TaskDetail(APIView):
-    # TODO - for now the permission is allow any to streamline testing apis
+
     permission_classes = [IsAuthenticated] 
     def get(self , request, task_id):
         try:
@@ -163,7 +140,6 @@ class TaskDetail(APIView):
             serializer = TaskSerializer(queryset)
             
             
-            # goals_belong_to_task = Goal.objects.filter(task=task_id , user=request.user)
             goals_belong_to_task = queryset.goals.all()
             goals_doesnot_belong_to_task = Goal.objects.filter(user=request.user).exclude(id__in=queryset.goals.all().values_list("id"))
             
@@ -226,37 +202,27 @@ def gen_response(user_input):
             {
                 "role": "user",
                 "content": user_input
-            }
+            }, 
+            
         ]
+        , keep_alive=False
     )
 
     return response['message']["content"]
 
 
-# #    {
-#         "id": 1,
-#         "emoji": "😄",
-#         "feeling_text": "im feeling great",
-#         "ai_response": "wow good for you(that was from me dw its not AI response yet 😆)",
-#         "date": "2025-10-27",
-#         "user": 1
-#     }
+
 class EmotionIndex(APIView):
-    # TODO - for now the permission is allow any to streamline testing apis
     permission_classes = [IsAuthenticated]
     def get(self , request):
         try:
             
-            # TODO - decide whether the returned data is only 7 days, a week 
             queryset = Emotion.objects.filter(user = request.user)
-            # queryset = Emotion.objects.all()
             serializer = EmotionSerializer(queryset , many = True)
             return Response(serializer.data, status = status.HTTP_200_OK)
         except Exception as error:
             return Response({'error': str(error)} , status = status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    # TODO - update the entry later on with personlized previous data, so that 
-    # the ai becomes smarter and understand the user state
     def post(self, request):
         try:
             data=request.data
@@ -267,8 +233,15 @@ class EmotionIndex(APIView):
             )
             serializer = EmotionSerializer(data = data)
             if serializer.is_valid():
-                # serializer.save()
                 serializer.save(user=request.user)
+                
+                try:
+                    ai_report = AiAnalysisReport.objects.filter(user=request.user, date=date.today()).order_by('-time_reported').first()
+                    ai_report.save()  
+                except Exception:
+                    pass
+                    
+                
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -279,49 +252,7 @@ class EmotionIndex(APIView):
             
             
 
-# class LinkTaskToGoal(APIView):
-#     permission_classes = [AllowAny]
-#     def patch(self, request, goal_id, task_id):
-#         goal = get_object_or_404(Goal, id=goal_id)
-#         task = get_object_or_404(Task, id=task_id)
-#         goal.tasks.add(task)
-        
-#         goals_belong_to_task = Goal.objects.filter(tasks = task_id)
-#         goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id)
-        
-#         return Response(
-#             {
-#                 "message": f"You have linked the task {task_id} to the goal {goal_id}",
-#                 "goals_belong_to_task": GoalSerializer(goals_belong_to_task, many=True).data,
-#                 "goals_doesnot_belong_to_task": GoalSerializer(goals_doesnot_belong_to_task, many=True).data,
-#             },
-#             status=status.HTTP_200_OK,
-#         )
 
-# class UnlinkTaskFromGoal(APIView):
-#     permission_classes = [AllowAny]
-#     def patch(self, request, goal_id, task_id):
-#         # i might dont need to reltae the user id as the goal id and task id is unique to the user
-#         # user_id = request.data.get("user")
-#         goal = get_object_or_404(Goal, id=goal_id)
-#         task = get_object_or_404(Task, id=task_id)
-#         goal.tasks.remove(task)
-        
-#         # goals_belong_to_task = Goal.objects.filter(tasks = task_id , user = user_id)
-#         # goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id).filter(user = user_id)
-        
-#         goals_belong_to_task = Goal.objects.filter(tasks = task_id)
-#         goals_doesnot_belong_to_task = Goal.objects.exclude(tasks = task_id)
-        
-#         return Response(
-#             {
-#                 "message": f"You have unlinked the task {task_id} to the goal {goal_id}",
-#                 "goals_belong_to_task": GoalSerializer(goals_belong_to_task, many=True).data,
-#                 "goals_doesnot_belong_to_task": GoalSerializer(goals_doesnot_belong_to_task, many=True).data,
-#             },
-#             status=status.HTTP_200_OK,
-#         )
-        
 
 class LinkGoalToTask(APIView):
     permission_classes = [IsAuthenticated] 
@@ -330,10 +261,6 @@ class LinkGoalToTask(APIView):
         task = get_object_or_404(Task, id=task_id, user=request.user)
         task.goals.add(goal)
         
-        # goals_belong_to_task = Goal.objects.filter(task=task_id)
-        # goals_doesnot_belong_to_task = Goal.objects.exclude(
-        #     id__in=task.goals.all().values_list("id")
-        # )
         
         goals_belong_to_task = task.goals.all()
         goals_doesnot_belong_to_task = Goal.objects.filter(user=request.user).exclude(id__in=task.goals.all().values_list("id"))
@@ -354,10 +281,6 @@ class UnLinkGoalToTask(APIView):
         task = get_object_or_404(Task, id=task_id, user=request.user)
         task.goals.remove(goal)
         
-        # goals_belong_to_task = Goal.objects.filter(task=task_id)
-        # goals_doesnot_belong_to_task = Goal.objects.exclude(
-        #     id__in=task.goals.all().values_list("id")
-        # )
         
         goals_belong_to_task = task.goals.all()
         goals_doesnot_belong_to_task = Goal.objects.filter(user=request.user).exclude(id__in=task.goals.all().values_list("id"))
@@ -377,9 +300,8 @@ class CheckTodayEmotionSubmission(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         has_entry = Emotion.objects.filter(user=request.user, date=date.today()).exists()
-        # has_entry = Emotion.objects.filter( date=date.today()).exists()
+
         if has_entry:
-            # might need to delte last, cus either way they only will have one entry per day
             emotion = Emotion.objects.filter(user=request.user, date=date.today()).last()
             serialized = EmotionSerializer(emotion).data
             return Response({
@@ -389,8 +311,7 @@ class CheckTodayEmotionSubmission(APIView):
         return Response({"already_submitted": has_entry})
     
     
-# TODO 
-# in the dashboard retrun the number of tasks per each goal
+
 
 
 class VisionBoardDetial(APIView):
@@ -398,7 +319,6 @@ class VisionBoardDetial(APIView):
 
     def get(self, request):
         try:
-            # board = VisionBoard.objects.get(user=request.user)
             board, created = VisionBoard.objects.get_or_create(user=request.user)
             serializer = VisionBoardSerializer(board)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -429,7 +349,7 @@ class SignupUserView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         
-        if User.objects.filter(username=username).exists():
+        if User.objects.filter(username__iexact=username).exists():
             return Response(
                 {'error': "User Already Exisits"},
                 status=status.HTTP_400_BAD_REQUEST
@@ -463,11 +383,8 @@ class SignupUserView(APIView):
 def gen_dashboard_summary(user_data):
     weekly_tasks_data = user_data.get("tasks", [])
     weekly_emotions_data = user_data.get("emotions", [])
-
     
     emotions_by_date = {e['date']: e for e in weekly_emotions_data}
-
-    print("innn genn---------------------------------------------------------------------------------------------------------")
     tasks_by_date= {}
     for task in weekly_tasks_data:
         task_date = task['date']
@@ -476,17 +393,6 @@ def gen_dashboard_summary(user_data):
         tasks_by_date[task_date].append(task)
 
     
-    
-    # summary_text = "Here is the user's data for the past period:\n"
-    # for dayDate in sorted(tasks_by_date.keys()):
-    #     emotion_entry = emotions_by_date.get(dayDate, {})
-    #     emoji = emotion_entry.get('emoji', 'None')
-    #     feeling_text = emotion_entry.get('feeling_text', '')
-
-    #     summary_text += f"{dayDate} (Mood: {emoji}, Notes: {feeling_text}):\n"
-    #     for t in tasks_by_date[dayDate]:
-    #         summary_text += f"  - Task '{t['content']}' is {t['status']}\n"
-        # Combine both — prioritize emotion dates so no day is skipped
     all_dates = sorted(set(emotions_by_date.keys()) | set(tasks_by_date.keys()))
 
     summary_text = "Here is the user's mood data (do not infer missing days):\n"
@@ -498,7 +404,7 @@ def gen_dashboard_summary(user_data):
 
         summary_text += f"\n{day_date} (Mood: {emoji}, Journal: {feeling_text}):\n"
 
-        # Add tasks if available
+
         day_tasks = tasks_by_date.get(day_date, [])
         if day_tasks:
             for t in day_tasks:
@@ -508,20 +414,20 @@ def gen_dashboard_summary(user_data):
     print(summary_text)
 
     system_prompt = (
-    "You are Luna, a mental wellness assistant. "
-    "Analyze the following user data for trends over the week. "
-    "Output ONLY plain text, addressing the user directly (use 'you' instead of 'the user'). "
-    "Do NOT use markdown, bold, or headings. "
-    "Write a very short, concise report in two sentences: "
-    "first sentence for the main trend, second sentence for a coping mechanism or supportive tip. "
-    "Do not ask any questions or add extra commentary.")
+     "You are Luna, a kind and supportive mental wellness assistant. "
+    "Speak directly to the user using 'you' and 'your' instead of 'the user'. "
+    "Analyze ONLY the mood and task data provided below — do not imagine or infer missing days. "
+    "Write exactly two short sentences: "
+    "the first should describe the emotional trend you observed, addressing the user directly; "
+    "the second should give a gentle coping or self-care suggestion. "
+    "Avoid prefacing with phrases like 'Here's a summary' or 'Based on the provided data' — just speak naturally.")
     
     response = ollama.chat(
         model="ALIENTELLIGENCE/mentalwellness",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": summary_text}
-        ]
+        ] ,  keep_alive=False
     )
     
     return response['message']["content"] if response['message'] else "No summary available."
@@ -533,27 +439,26 @@ class DashBoardInfo(APIView):
         try:
             user = request.user
             today = date.today()
-            # get coompleted tasks out of all tasks
+            
+            
+            # - get coompleted tasks out of all tasks:
             all_tasks = Task.objects.filter(user=user , date=today)
             total_tasks = all_tasks.count()
             completed_tasks_count = all_tasks.filter(status='completed').count()
             
             
-            # returning the week emotion + tasks info entry to go to the ai
-            # crediting https://stackoverflow.com/questions/17016051/need-sunday-as-the-first-day-of-the-week
+            # - returning the week emotion + tasks info entry to be sent to the ai
+            #   crediting https://stackoverflow.com/questions/17016051/need-sunday-as-the-first-day-of-the-week
             days_since_sunday = (today.weekday() + 1) % 7
             
-            # crediting https://www.dataquest.io/blog/python-datetime/
-            # the below retrieves the date of the sunday of the current week
+            #   crediting https://www.dataquest.io/blog/python-datetime/
+            #   the below retrieves the date of the sunday of the current week
             start_of_week = today - timedelta(days=days_since_sunday)
             
 
             weekly_tasks = Task.objects.filter(user=user, date__gte=start_of_week, date__lte=today)
             weekly_tasks_data = TaskSerializer(weekly_tasks, many=True).data
 
-
-                        
-                
             weekly_emotions = Emotion.objects.filter(
                 user=user,
                 date__gte=start_of_week,
@@ -565,10 +470,18 @@ class DashBoardInfo(APIView):
             user_data_for_ai = {
             "tasks": weekly_tasks_data,       
             "emotions": weekly_emotions_data  
-}
-
-            ai_analytics = gen_dashboard_summary(user_data_for_ai)
-            
+            }
+            #   below checkes/create basec on if there is already a generatred response or not            
+            ai_report = check_get_ai_submitted_report(user , today)
+            if not ai_report:
+                ai_analytics = gen_dashboard_summary(user_data_for_ai)
+                data={ 'ai_report': ai_analytics , 'date': today}
+                serializer = AiAnalysisReportSerilaizer(data = data)
+                if serializer.is_valid():
+                    serializer.save(user=user)
+            else:
+                 ai_analytics = ai_report
+                
 
             # emojis for this month
             start_of_month = today.replace(day=1)
@@ -577,7 +490,7 @@ class DashBoardInfo(APIView):
                 date__gte=start_of_month,
                 date__lte=today
             )
-            # monthly_emotions_data = EmotionSerializer(monthly_emotions , many=True).data
+            monthly_emotions_data = EmotionSerializer(monthly_emotions , many=True).data
             emojis_this_month = monthly_emotions.values_list('emoji', flat=True)
 
 
@@ -610,7 +523,7 @@ class DashBoardInfo(APIView):
             response_data = {
                 "total_tasks": total_tasks,
                 "completed_tasks": completed_tasks_count,
-                "emojis_this_month": list(emojis_this_month),
+                "emojis_this_month": monthly_emotions_data,
                 "emoji_counts": emoji_counts,
                 "goals_info": goal_info,
                 "high_priority_tasks": high_priority_tasks_data,
@@ -623,3 +536,33 @@ class DashBoardInfo(APIView):
 
         except Exception as error:
             return Response({"error": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+# the logic below, is needed because everytime the user navigate/refresh the dashboard the ai insights is regenerated
+# which makes the loading longer, and unneccsary in terms of updating the insights since the user data havent changed
+
+# so the logic here basically is:
+# - first checks, did the user already have a response from ai stored in the AiAnalysisReport? if no then generate new one in the dashboard get method
+#   otherwase, go in another checking statement, did the user check in today? if he didnt then just retrieve the stored info, no need to send to the llm
+#   however, if the user chacked in today, then by calculating the time he checked in against when the report generated, the return would defer
+#               - he checked in after the generation -> update and create new resposne
+#               - he checked in before the generation -> just retrieve the stored info
+def check_get_ai_submitted_report(user, date):
+    ai_daily_report = AiAnalysisReport.objects.filter(user=user, date=date).order_by('-time_reported').first()
+    if ai_daily_report:
+        has_checked_in = Emotion.objects.filter(user=user, date=date).exists()
+
+        if has_checked_in:
+            time_he_checked_in = ai_daily_report.time_checked_in
+            time_ai_generated_report = ai_daily_report.time_reported
+            if time_he_checked_in > time_ai_generated_report:
+                return False
+            else:
+                serializer = AiAnalysisReportSerilaizer(ai_daily_report)
+                return serializer.data.get('ai_report')
+        else:
+            serializer = AiAnalysisReportSerilaizer(ai_daily_report)
+            return serializer.data.get('ai_report')
+    else:
+        return False

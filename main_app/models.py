@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 User = get_user_model()
-# Create your models here.
+
 
 
 
@@ -50,14 +50,12 @@ class Emotion(models.Model):
     feeling_text = models.TextField(max_length=300)
     ai_response = models.TextField(blank=True, null=True)
     date = models.DateField(auto_now_add=True)
+    # TODO : the below only for testing
+    # date = models.DateField()
 
     def __str__(self):
         return f"{self.user.username} - {self.date} ({self.emoji})"
 
-# TODO - determine the type of the excalidraw
-# class VisionBoard(models.Model):
-#     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='vision_board')
-#     excalidraw_data = 
 
 
 class VisionBoard(models.Model):
@@ -66,3 +64,12 @@ class VisionBoard(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Vision Board"
+
+#  the below model is mainly to store the ai reports, so that no extra request to the llm is created when dealing with the same data
+#  will be used to genreate report based on each day and only if the user entered a new emotion
+class AiAnalysisReport(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ai_name')
+    ai_report = models.TextField(blank=True, null=True)
+    date = models.DateField(auto_now_add=True)
+    time_checked_in= models.DateTimeField(auto_now=True)
+    time_reported=models.DateTimeField(auto_now_add=True)

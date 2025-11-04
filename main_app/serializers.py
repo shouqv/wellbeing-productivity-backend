@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Goal,Task , Emotion , VisionBoard
+from .models import Goal,Task , Emotion , VisionBoard , AiAnalysisReport
 
 
 
@@ -30,4 +30,11 @@ class VisionBoardSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = VisionBoard
+        fields = "__all__"
+        
+        
+class AiAnalysisReportSerilaizer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
+        model = AiAnalysisReport
         fields = "__all__"
