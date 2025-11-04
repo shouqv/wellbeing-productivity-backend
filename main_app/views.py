@@ -414,7 +414,7 @@ def gen_dashboard_summary(user_data):
     print(summary_text)
 
     system_prompt = (
-     "You are Luna, a kind and supportive mental wellness assistant. "
+    "You are Luna, a kind and supportive mental wellness assistant. "
     "Speak directly to the user using 'you' and 'your' instead of 'the user'. "
     "Analyze ONLY the mood and task data provided below — do not imagine or infer missing days. "
     "Write exactly two short sentences: "
@@ -480,7 +480,7 @@ class DashBoardInfo(APIView):
                 if serializer.is_valid():
                     serializer.save(user=user)
             else:
-                 ai_analytics = ai_report
+                ai_analytics = ai_report
                 
 
             # emojis for this month
