@@ -85,19 +85,15 @@ WSGI_APPLICATION = 'wellbeing_productivity_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASE_URL = os.getenv('DATABASE_URL')
 
-# DATABASES = {
-#     'default': dj_database_url.config(default=DATABASE_URL)
-# }
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'productivity_project',  
-        'USER': 'postgres',
-        'PASSWORD': 'Ss757757!',
-        'HOST': 'localhost',  
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'), 
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),  
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
