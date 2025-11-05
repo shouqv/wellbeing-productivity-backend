@@ -2,18 +2,15 @@
 
 ## DESCRIPTION
 
-Beam is a solo project and represents my capstone project for the Software Engineering Bootcamp presented by General Assembly, as well as an initiative from the Saudi Digital Academy.
+Beam is a solo project and represents my capstone project for the Software Engineering Bootcamp presented by General Assembly, with support from the Saudi Digital Academy.
 
 Beam is a full-stack productivity app that allows users to:
-
 - Track tasks and display them in an integrated calendar
 - Link tasks to goals
 - Track mood and receive AI-generated insights/supportive messages
 - Use a whiteboard for mind mapping or vision boards, including image support
 
 The core idea of this app is to enhance productivity in a healthy way, supporting users to manage tasks effectively while taking care of their mental well-being.
-
-## CORE FEATURES
 
 ### Dashboard
 Displays important information to the user such as:
@@ -44,7 +41,6 @@ Displays important information to the user such as:
 - Responses are processed by a mental health assistant LLM to provide personalized supportive messages
 
 
-
 ## TECH STACK
 
 ### Backend:
@@ -63,7 +59,6 @@ Displays important information to the user such as:
 
 ## FRONT-END REPOSITORY
 [Front End](https://github.com/shouqv/wellbeing-productivity-frontend)
-## LINK TO DEPLOYED SITE
 
 ## ERD DIAGRAM
 ![ERD](./Beam_ERD.jpg)
@@ -115,7 +110,7 @@ git clone https://github.com/shouqv/wellbeing-productivity-frontend.git
 
 ```
 
-1. Run Docker Compose from the backend folder:
+2. Run Docker Compose from the backend folder:
 ```
 cd wellbeing-productivity-backend
 docker-compose up --build
@@ -128,5 +123,5 @@ Note:
 
 - Allow users to view their journal entries in addition to mood entries.
 - Implement reminders so users can be notified of upcoming or pending tasks.
-- Provide a dedicated account page where users can view and edit additional profile information
+- Provide a dedicated account page where users can view and edit additional profile information.
 - Make AI-generated supportive messages personalized like the trend analysis response. Currently, only the trend analysis is tailored to the user.
