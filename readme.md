@@ -12,17 +12,51 @@ Beam is a full-stack productivity app that allows users to:
 
 The core idea of this app is to enhance productivity in a healthy way, supporting users to manage tasks effectively while taking care of their mental well-being.
 
-## TECH STACK
+## CORE FEATURES:
+### Authentication
+- Users can create an account and securely log in using JWT-based authentication.
+- Authenticated users gain access to personalized dashboards, tasks, goals, mood tracking, and vision boards.
+### Dashboard
+Displays important information to the user such as:
+- Frequency of selected moods (emojis) throughout the month (pie chart)
+- Highest priority task of the day
+- Progress of today’s assigned tasks
+- All goals and the number of tasks completed toward them (bar chart)
+- Calendar displaying each day’s selected mood/emoji
+- Supportive message if a goal is achieved
+- AI analysis of trends based on tasks, progress, journal, and mood entries to personalize AI responses
 
+### Visionboard
+- A whiteboard that allows users to paste images and design inspiration boards
+- Users can create multiple pages
+
+### Goals
+- Users can set goals and alter their status (active/completed)
+- Goals can be filtered based on status
+
+### Tasks
+- Users can navigate to any day in the calendar to add/view tasks
+- Tasks can be linked to long-term goals
+- Tasks are arranged by priority and can be filtered by status
+
+### Mood & Journal Check-In
+- Users can check in once a day by selecting an emoji representing their mood
+- Users can write a journal describing their feelings
+- Responses are processed by a mental health assistant LLM to provide personalized supportive messages
+
+
+## TECH STACK
 ### Backend:
-- Framework & Language: Django REST Framework, Python
+- Language & Framework: Python, Django
+- API Library: Django REST Framework, djangorestframework-simplejwt (JWT authentication)
 - Middleware: CORS Headers
-- AI / LLM: Ollama (local) with the ALIENTELLIGENCE/mentalwellness model
 - Database: PostgreSQL
+- AI / LLM: Ollama (local) with the ALIENTELLIGENCE/mentalwellness model
+- Environment / Config: python-decouple, python-dotenv
 ### Frontend:
 - Framework & Libraries: React, React Router
 - Styling: Tailwind CSS, Vanilla CSS
-- Tools & Features: Schedule-X, Tldraw, Shadcn, JWT-Decode
+- Tools & Libraries: Schedule-X, Tldraw, Shadcn, JWT-Decode, Axios
 ### Dev tools:
 - Git & GitHub
 - Docker
