@@ -13,7 +13,7 @@ Beam is a full-stack productivity app that allows users to:
 
 The core idea of this app is to enhance productivity in a healthy way, supporting users to manage tasks effectively while taking care of their mental well-being.
 
-## CORE FEATURES:
+## CORE FEATURES
 
 ### Dashboard
 Displays important information to the user such as:
@@ -45,7 +45,7 @@ Displays important information to the user such as:
 
 
 
-## Tech stack
+## TECH STACK
 
 ### Backend:
 - Framework & Language: Django REST Framework, Python
@@ -61,14 +61,14 @@ Displays important information to the user such as:
 - Docker
 - Postman
 
-## Front End Repo Link
+## FRONT-END REPOSITORY
 [Front End](https://github.com/shouqv/wellbeing-productivity-frontend)
 ## LINK TO DEPLOYED SITE
 
-## ERD diagram
+## ERD DIAGRAM
 ![ERD](./Beam_ERD.jpg)
 
-## Routing Table
+## ROUTING TABLE
 
 | Method | URL Pattern | Handler | Action |
 |:--------|:-------------|:---------|:--------|
@@ -95,12 +95,14 @@ Displays important information to the user such as:
 | GET | /api/dashboard/ | DashBoardInfo | Retrieve the authenticated user's dashboard data including mood trends, task progress, and AI insights |
 
 
-## Installation Instructions (Docker)
+## INSTALLATION INSTRUCTION (Docker)
 1. Clone both repositories into the same parent folder:
 
+```
 parent-folder/
 ├── wellbeing-productivity-backend/
 └── wellbeing-productivity-frontend/
+```
 
 - Backend:
 ```
@@ -122,7 +124,7 @@ docker-compose up --build
 Note:
 - The AI model (Ollama, ALIENTELLIGENCE/mentalwellness) should be installed and running locally for LLM-based features
 
-## IceBox Features
+## ICEBOX FEATURES
 
 - Allow users to view their journal entries in addition to mood entries.
 - Implement reminders so users can be notified of upcoming or pending tasks.
