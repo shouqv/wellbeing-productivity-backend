@@ -12,35 +12,6 @@ Beam is a full-stack productivity app that allows users to:
 
 The core idea of this app is to enhance productivity in a healthy way, supporting users to manage tasks effectively while taking care of their mental well-being.
 
-### Dashboard
-Displays important information to the user such as:
-- Frequency of selected moods (emojis) throughout the month (pie chart)
-- Highest priority task of the day
-- Progress of today’s assigned tasks
-- All goals and the number of tasks completed toward them (bar chart)
-- Calendar displaying each day’s selected mood/emoji
-- Supportive message if a goal is achieved
-- AI analysis of trends based on tasks, progress, journal, and mood entries to personalize AI responses
-
-### Visionboard
-- A whiteboard that allows users to paste images and design inspiration boards
-- Users can create multiple pages
-
-### Goals
-- Users can set goals and alter their status (active/completed)
-- Goals can be filtered based on status
-
-### Tasks
-- Users can navigate to any day in the calendar to add/view tasks
-- Tasks can be linked to long-term goals
-- Tasks are arranged by priority and can be filtered by status
-
-### Mood & Journal Check-In
-- Users can check in once a day by selecting an emoji representing their mood
-- Users can write a journal describing their feelings
-- Responses are processed by a mental health assistant LLM to provide personalized supportive messages
-
-
 ## TECH STACK
 
 ### Backend:
