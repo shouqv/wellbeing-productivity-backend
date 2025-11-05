@@ -2,7 +2,7 @@
 
 ## DESCRIPTION
 
-Beam is a solo project and represents my capstone project for the Software Engineering Bootcamp presented by General Assembly, with support from the Saudi Digital Academy.
+Beam is my solo capstone project for the Software Engineering Bootcamp, presented by General Assembly, with support from the Saudi Digital Academy.
 
 Beam is a full-stack productivity app that allows users to:
 - Track tasks and display them in an integrated calendar
