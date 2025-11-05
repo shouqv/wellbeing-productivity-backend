@@ -52,9 +52,13 @@ class Emotion(models.Model):
     date = models.DateField(auto_now_add=True)
     # TODO : the below only for testing
     # date = models.DateField()
+    
+    class Meta: 
+        unique_together = ('user','date')
 
     def __str__(self):
         return f"{self.user.username} - {self.date} ({self.emoji})"
+    
 
 
 
