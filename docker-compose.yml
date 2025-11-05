@@ -1,0 +1,46 @@
+services:
+  beamproject:
+    image: postgres
+    container_name: beamproject
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: beam_admin
+      POSTGRES_PASSWORD: "123456"
+      POSTGRES_DB: beamproject
+  
+  frontend:
+    build:
+      context: ../wellbeing-productivity-frontend/
+      dockerfile: Dockerfile
+    container_name: "beam_frontend"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../wellbeing-productivity-frontend:/app
+      - /app/node_modules 
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - beamproject
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: beam_backend_api
+    command: >
+      bash -c "
+              python manage.py makemigrations &&
+              python manage.py migrate &&
+              python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./:/usr/src/backend/
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+    depends_on:
+      - beamproject
+volumes:
+  postgres_data:
